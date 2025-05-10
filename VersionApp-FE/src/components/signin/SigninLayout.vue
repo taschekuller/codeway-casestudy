@@ -68,7 +68,11 @@ async function handleSignIn() {
     isLoading.value = true
     error.value = ''
 
-    await signInWithEmailAndPassword(auth, email.value, password.value)
+    const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value)
+    // Store the token in localStorage
+    const token = await userCredential.user.getIdToken()
+    localStorage.setItem('token', token)
+
     router.push('/') // Redirect to home page after successful sign in
   } catch (err) {
     console.error('Sign in error:', err)

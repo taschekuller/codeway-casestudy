@@ -1,5 +1,7 @@
+<script setup>
+import Dashboard from '../components/home/Dashboard.vue'
+</script>
+
 <template>
-  <div>
-    <h1>Home</h1>
-  </div>
+  <Dashboard />
 </template>
