@@ -19,7 +19,7 @@
       <div></div>
     </div>
 
-    <div v-for="(param, index) in parameters" :key="index" class="grid grid-cols-5 items-center py-2 border-b border-gray-700">
+    <div v-for="(param, index) in parameters" :key="index" class="grid grid-cols-5 items-center py-2">
       <div>{{ param.key }}</div>
       <div>{{ param.value }}</div>
       <div>{{ param.description }}</div>
