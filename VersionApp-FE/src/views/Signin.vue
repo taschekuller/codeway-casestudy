@@ -1,5 +1,5 @@
 <script setup>
-import SigninLayout from '../components/home/SigninLayout.vue'
+import SigninLayout from '../components/signin/SigninLayout.vue'
 </script>
 
 <template>
