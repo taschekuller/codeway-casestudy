@@ -1,6 +1,9 @@
+<script setup>
+import SigninLayout from '../components/home/SigninLayout.vue'
+</script>
+
 <template>
   <div>
-    <h1>Signin</h1>
-    <p>Please sign in to continue.</p>
+    <SigninLayout />
   </div>
 </template>
