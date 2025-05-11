@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gradient-to-b from-[#1e1e2f] to-[#1e1e24] p-8 text-white">
     <div class="flex justify-between items-center mb-8">
-      <img src="../../../public/assets/codeway/codewayLogo.png" alt="Logo" class="w-12 h-8" />
+      <img src="/assets/codeway/codewayLogo.png" alt="Logo" class="w-12 h-8" />
       <div>
         <button class="text-white flex items-center gap-2">
           <UserIcon class="w-6 h-6" />

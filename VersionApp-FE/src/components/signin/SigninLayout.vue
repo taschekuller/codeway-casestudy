@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-[#1e1e2e] to-[#1e1e26]">
-    <img src="../../../public/assets/codeway/codewayLogo.png" alt="Logo" class="w-64" />
+    <img src="/assets/codeway/codewayLogo.png" alt="Logo" class="w-64" />
 
     <h1 class="text-2xl  mt-12" :style="{ color: colors.primary }">Please sign in</h1>
 
