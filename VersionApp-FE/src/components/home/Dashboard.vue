@@ -17,20 +17,17 @@
 
     <div v-else>
       <!-- Table Headers -->
-      <div class="grid grid-cols-6 text-left mb-4" :style="{ color: colors.dashboardTitle, fontSize: '1.5rem' }">
-        <div>App Version</div>
-        <div>Min Required</div>
-        <div>Force Update</div>
-        <div>Maintenance</div>
-        <div>Create Date</div>
-        <div></div>
+      <div class="grid grid-cols-4 text-left mb-4" :style="{ color: colors.dashboardTitle, fontSize: '1.5rem' }">
+        <div>Parameter Key</div>
+        <div>Value</div>
+        <div>Description</div>
+        <div>Created At</div>
       </div>
 
-      <div v-for="config in appConfigs" :key="config.id" class="grid grid-cols-6 items-center py-2">
-        <div>{{ config.appVersion }}</div>
-        <div>{{ config.minRequiredVersion }}</div>
-        <div>{{ config.forceUpdate ? 'Yes' : 'No' }}</div>
-        <div>{{ config.maintenanceMode ? 'Yes' : 'No' }}</div>
+      <div v-for="config in appConfigs" :key="config.id" class="grid grid-cols-5 items-center py-2">
+        <div>{{ config.paramKey }}</div>
+        <div>{{ config.value }}</div>
+        <div>{{ config.description || 'N/A' }}</div>
         <div>{{ formatDate(config.createdAt instanceof Date ? config.createdAt : new Date(config.createdAt)) }}</div>
         <div class="flex space-x-2">
           <Button size="sm" @click="editConfig(config)" class="bg-gradient-to-r from-[#2e69f5] to-[#2284f7] hover:from-[#1e59e5] hover:to-[#1274e7] text-white font-bold transition-all duration-200 cursor-pointer">Edit</Button>
@@ -41,57 +38,33 @@
       <!-- Add New Config Button -->
       <div class="mt-8">
         <Button @click="showCreateForm = true" class="bg-gradient-to-r from-[#00b6e2] to-[#00e8c8] hover:from-[#0194b8] hover:to-[#00b69e] text-white font-bold transition-all duration-200 cursor-pointer">
-          Add New Configuration
+          Add New Parameter
         </Button>
       </div>
 
       <!-- Create/Edit Form -->
       <div v-if="showCreateForm || showEditForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
         <div class="bg-[#1e1e2f] p-6 rounded-lg w-full max-w-2xl">
-          <h2 class="text-2xl mb-4">{{ showEditForm ? 'Edit Configuration' : 'Create New Configuration' }}</h2>
+          <h2 class="text-2xl mb-4">{{ showEditForm ? 'Edit Parameter' : 'Create New Parameter' }}</h2>
 
           <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <label class="block mb-1">App Version</label>
-              <Input v-model="formData.appVersion" placeholder="1.0.0" class="border-gray-600" />
+              <label class="block mb-1">Parameter Key</label>
+              <Input v-model="formData.paramKey" placeholder="min_version" class="border-gray-600" />
             </div>
             <div>
-              <label class="block mb-1">Min Required Version</label>
-              <Input v-model="formData.minRequiredVersion" placeholder="1.0.0" class="border-gray-600" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4 mb-4">
-            <div class="flex items-center">
-              <label class="mr-2">Force Update:</label>
-              <input type="checkbox" v-model="formData.forceUpdate" />
-            </div>
-            <div class="flex items-center">
-              <label class="mr-2">Maintenance Mode:</label>
-              <input type="checkbox" v-model="formData.maintenanceMode" />
+              <label class="block mb-1">Value</label>
+              <Input v-model="formData.value" placeholder="1.4.5" class="border-gray-600" />
             </div>
           </div>
 
           <div class="mb-4">
-            <label class="block mb-1">Features (JSON)</label>
+            <label class="block mb-1">Description</label>
             <textarea
-              v-model="featuresJson"
-              rows="4"
+              v-model="formData.description"
+              rows="3"
               class="w-full bg-[#2a2a3c] border border-gray-600 rounded p-2"
-              @blur="validateFeatures"
             ></textarea>
-            <p v-if="featuresError" class="text-red-500 text-sm mt-1">{{ featuresError }}</p>
-          </div>
-
-          <div class="mb-4">
-            <label class="block mb-1">Remote Config (JSON)</label>
-            <textarea
-              v-model="remoteConfigJson"
-              rows="4"
-              class="w-full bg-[#2a2a3c] border border-gray-600 rounded p-2"
-              @blur="validateRemoteConfig"
-            ></textarea>
-            <p v-if="remoteConfigError" class="text-red-500 text-sm mt-1">{{ remoteConfigError }}</p>
           </div>
 
           <div class="flex justify-end gap-2 mt-4">
@@ -123,25 +96,14 @@ const loading = ref(true)
 const appConfigs = ref([])
 const showCreateForm = ref(false)
 const showEditForm = ref(false)
-const featuresJson = ref('{}')
-const remoteConfigJson = ref('{}')
-const featuresError = ref('')
-const remoteConfigError = ref('')
 
 const formData = ref({
-  appVersion: '',
-  minRequiredVersion: '',
-  forceUpdate: false,
-  maintenanceMode: false,
-  features: {},
-  remoteConfig: {}
+  paramKey: '',
+  value: '',
+  description: ''
 })
 
 const editingConfigId = ref(null)
-
-const formHasErrors = computed(() => {
-  return featuresError.value || remoteConfigError.value
-})
 
 onMounted(async () => {
   try {
@@ -185,7 +147,16 @@ async function fetchConfigurations() {
     console.log('Fetching configurations...')
     const data = await appConfigService.getAllConfigs()
     console.log('Configurations fetched successfully')
-    appConfigs.value = data
+
+    // Ensure all records have the required fields
+    appConfigs.value = data.map(config => {
+      return {
+        ...config,
+        paramKey: config.paramKey || (config.appVersion ? 'min_version' : 'unknown_param'),
+        value: config.value || config.minRequiredVersion || config.appVersion || 'N/A',
+        description: config.description || 'Migrated from previous format'
+      }
+    })
   } catch (error) {
     console.error('Failed to fetch configurations:', error)
 
@@ -196,7 +167,15 @@ async function fetchConfigurations() {
         console.log('Token refreshed, trying to fetch configurations again...')
         try {
           const data = await appConfigService.getAllConfigs()
-          appConfigs.value = data
+          // Ensure all records have the required fields
+          appConfigs.value = data.map(config => {
+            return {
+              ...config,
+              paramKey: config.paramKey || (config.appVersion ? 'min_version' : 'unknown_param'),
+              value: config.value || config.minRequiredVersion || config.appVersion || 'N/A',
+              description: config.description || 'Migrated from previous format'
+            }
+          })
           console.log('Configurations fetched after token refresh')
         } catch (retryError) {
           console.error('Still failed after token refresh:', retryError)
@@ -219,60 +198,9 @@ function formatDate(date) {
 
 function resetForm() {
   formData.value = {
-    appVersion: '',
-    minRequiredVersion: '',
-    forceUpdate: false,
-    maintenanceMode: false,
-    features: {},
-    remoteConfig: {}
-  }
-  featuresJson.value = '{}'
-  remoteConfigJson.value = '{}'
-  featuresError.value = ''
-  remoteConfigError.value = ''
-}
-
-function validateFeatures() {
-  try {
-    const parsed = JSON.parse(featuresJson.value);
-
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      featuresError.value = 'Features must be a JSON object';
-      return;
-    }
-
-    let valid = true;
-    Object.entries(parsed).forEach(([key, value]) => {
-      if (typeof value !== 'boolean') {
-        valid = false;
-      }
-    });
-
-    if (!valid) {
-      featuresError.value = 'All feature values must be boolean (true/false)';
-      return;
-    }
-
-    featuresError.value = '';
-    formData.value.features = parsed;
-  } catch (error) {
-    featuresError.value = 'Invalid JSON format';
-  }
-}
-
-function validateRemoteConfig() {
-  try {
-    const parsed = JSON.parse(remoteConfigJson.value);
-
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      remoteConfigError.value = 'Remote config must be a JSON object';
-      return;
-    }
-
-    remoteConfigError.value = '';
-    formData.value.remoteConfig = parsed;
-  } catch (error) {
-    remoteConfigError.value = 'Invalid JSON format';
+    paramKey: '',
+    value: '',
+    description: ''
   }
 }
 
@@ -283,48 +211,30 @@ function cancelForm() {
 }
 
 function editConfig(config) {
+  // Handle potential legacy data
   formData.value = {
-    appVersion: config.appVersion,
-    minRequiredVersion: config.minRequiredVersion,
-    forceUpdate: config.forceUpdate,
-    maintenanceMode: config.maintenanceMode,
-    features: config.features,
-    remoteConfig: config.remoteConfig
+    paramKey: config.paramKey || (config.appVersion ? 'min_version' : 'unknown_param'),
+    value: config.value || config.minRequiredVersion || config.appVersion || '',
+    description: config.description || 'Migrated from previous format'
   }
-  featuresJson.value = JSON.stringify(config.features, null, 2)
-  remoteConfigJson.value = JSON.stringify(config.remoteConfig, null, 2)
   editingConfigId.value = config.id
   showEditForm.value = true
 }
 
 async function saveConfig() {
-  validateFeatures();
-  validateRemoteConfig();
-
-  if (formHasErrors.value) return;
-
   try {
     loading.value = true;
 
-    const savedFeatures = formData.value.features;
-    const savedRemoteConfig = formData.value.remoteConfig;
-
     const configToSave = {
-      appVersion: formData.value.appVersion.trim(),
-      minRequiredVersion: formData.value.minRequiredVersion.trim(),
-      forceUpdate: Boolean(formData.value.forceUpdate),
-      maintenanceMode: Boolean(formData.value.maintenanceMode),
-      features: {},
-      remoteConfig: {}
+      paramKey: formData.value.paramKey.trim(),
+      value: formData.value.value.trim(),
+      description: formData.value.description.trim()
     };
 
     console.log('Saving configuration:', configToSave);
 
     if (showEditForm.value) {
       const updatedConfig = await appConfigService.updateConfig(editingConfigId.value, configToSave);
-
-      updatedConfig.features = savedFeatures;
-      updatedConfig.remoteConfig = savedRemoteConfig;
 
       const index = appConfigs.value.findIndex(c => c.id === editingConfigId.value);
       if (index !== -1) {
@@ -334,10 +244,6 @@ async function saveConfig() {
       console.log('Config updated successfully');
     } else {
       const newConfig = await appConfigService.createConfig(configToSave);
-
-      newConfig.features = savedFeatures;
-      newConfig.remoteConfig = savedRemoteConfig;
-
       appConfigs.value.push(newConfig);
 
       console.log('New config created successfully:', newConfig.id);
@@ -353,7 +259,6 @@ async function saveConfig() {
 
         if (error.response.data && error.response.data.message) {
           if (Array.isArray(error.response.data.message)) {
-            // Format detailed validation errors
             errorMessage += ':\n' + error.response.data.message.join('\n');
           } else {
             errorMessage += ': ' + error.response.data.message;
@@ -379,7 +284,7 @@ async function saveConfig() {
 }
 
 async function deleteConfig(id) {
-  if (!confirm('Are you sure you want to delete this configuration?')) return
+  if (!confirm('Are you sure you want to delete this parameter?')) return
 
   try {
     loading.value = true

@@ -1,10 +1,4 @@
-import {
-  IsNotEmpty,
-  IsString,
-  IsBoolean,
-  IsObject,
-  IsOptional,
-} from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
 
 export class FeaturesDto {
   [key: string]: boolean;
@@ -17,51 +11,27 @@ export class RemoteConfigDto {
 export class CreateAppConfigDto {
   @IsNotEmpty()
   @IsString()
-  appVersion: string;
-
-  @IsNotEmpty()
-  @IsBoolean()
-  forceUpdate: boolean;
+  paramKey: string;
 
   @IsNotEmpty()
   @IsString()
-  minRequiredVersion: string;
+  value: string;
 
-  @IsNotEmpty()
-  @IsBoolean()
-  maintenanceMode: boolean;
-
-  @IsNotEmpty()
-  @IsObject()
-  features: Record<string, boolean>;
-
-  @IsNotEmpty()
-  @IsObject()
-  remoteConfig: Record<string, any>;
+  @IsOptional()
+  @IsString()
+  description: string;
 }
 
 export class UpdateAppConfigDto {
   @IsOptional()
   @IsString()
-  appVersion?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  forceUpdate?: boolean;
+  paramKey?: string;
 
   @IsOptional()
   @IsString()
-  minRequiredVersion?: string;
+  value?: string;
 
   @IsOptional()
-  @IsBoolean()
-  maintenanceMode?: boolean;
-
-  @IsOptional()
-  @IsObject()
-  features?: Record<string, boolean>;
-
-  @IsOptional()
-  @IsObject()
-  remoteConfig?: Record<string, any>;
+  @IsString()
+  description?: string;
 }

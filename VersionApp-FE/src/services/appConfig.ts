@@ -1,14 +1,11 @@
 import httpClient from './httpClient';
 
-// AppConfig type definition to resolve the import error
+// AppConfig type definition to reflect the simplified structure
 interface AppConfig {
   id?: string;
-  appVersion: string;
-  forceUpdate: boolean;
-  minRequiredVersion: string;
-  maintenanceMode: boolean;
-  features: Record<string, boolean>;
-  remoteConfig: Record<string, any>;
+  paramKey: string;
+  value: string;
+  description: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -37,12 +34,9 @@ export const appConfigService = {
   async createConfig(config: Omit<AppConfig, 'id' | 'createdAt' | 'updatedAt'>): Promise<AppConfig> {
     try {
       const configToSend = {
-        appVersion: config.appVersion || '',
-        minRequiredVersion: config.minRequiredVersion || '',
-        forceUpdate: Boolean(config.forceUpdate),
-        maintenanceMode: Boolean(config.maintenanceMode),
-        features: config.features || {},
-        remoteConfig: config.remoteConfig || {}
+        paramKey: config.paramKey || '',
+        value: config.value || '',
+        description: config.description || ''
       };
 
       console.log('Sending create config request with:', JSON.stringify(configToSend));
@@ -62,12 +56,9 @@ export const appConfigService = {
   async updateConfig(id: string, config: Partial<AppConfig>): Promise<AppConfig> {
     try {
       const configToSend = {
-        ...(config.appVersion !== undefined ? { appVersion: String(config.appVersion) } : {}),
-        ...(config.minRequiredVersion !== undefined ? { minRequiredVersion: String(config.minRequiredVersion) } : {}),
-        ...(config.forceUpdate !== undefined ? { forceUpdate: Boolean(config.forceUpdate) } : {}),
-        ...(config.maintenanceMode !== undefined ? { maintenanceMode: Boolean(config.maintenanceMode) } : {}),
-        ...(config.features !== undefined ? { features: config.features } : {}),
-        ...(config.remoteConfig !== undefined ? { remoteConfig: config.remoteConfig } : {})
+        ...(config.paramKey !== undefined ? { paramKey: String(config.paramKey) } : {}),
+        ...(config.value !== undefined ? { value: String(config.value) } : {}),
+        ...(config.description !== undefined ? { description: String(config.description) } : {})
       };
 
       console.log(`Sending update config request for ID ${id} with:`, JSON.stringify(configToSend));

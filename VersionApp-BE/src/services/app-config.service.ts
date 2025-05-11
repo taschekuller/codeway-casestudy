@@ -1,13 +1,21 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { getFirestore } from '../firebase-config';
 import { AppConfig } from '../models/app-config.model';
 
 @Injectable()
 export class AppConfigService implements OnModuleInit {
   private firestore;
+  private readonly logger = new Logger(AppConfigService.name);
+  private readonly collection = 'app-configurations';
 
   onModuleInit() {
-    this.firestore = getFirestore();
+    try {
+      this.firestore = getFirestore();
+      this.logger.log('Firestore initialized successfully');
+    } catch (error) {
+      this.logger.error(`Failed to initialize Firestore: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   private getFirestoreInstance() {
@@ -17,16 +25,24 @@ export class AppConfigService implements OnModuleInit {
     return this.firestore;
   }
 
-  private readonly collection = 'app-configurations';
-
   async getAppConfig(id: string): Promise<AppConfig | null> {
     try {
       const doc = await this.getFirestoreInstance().collection(this.collection).doc(id).get();
+
       if (!doc.exists) {
         return null;
       }
-      return { id: doc.id, ...doc.data() } as AppConfig;
+
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        paramKey: data.paramKey || '',
+        value: data.value || '',
+        description: data.description || ''
+      } as AppConfig;
     } catch (error) {
+      this.logger.error(`Failed to get app configuration: ${error.message}`, error.stack);
       throw new Error(`Failed to get app configuration: ${error.message}`);
     }
   }
@@ -34,8 +50,19 @@ export class AppConfigService implements OnModuleInit {
   async getAllAppConfigs(): Promise<AppConfig[]> {
     try {
       const snapshot = await this.getFirestoreInstance().collection(this.collection).get();
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as AppConfig);
+
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          paramKey: data.paramKey || '',
+          value: data.value || '',
+          description: data.description || ''
+        } as AppConfig;
+      });
     } catch (error) {
+      this.logger.error(`Failed to get app configurations: ${error.message}`, error.stack);
       throw new Error(`Failed to get app configurations: ${error.message}`);
     }
   }
@@ -44,7 +71,9 @@ export class AppConfigService implements OnModuleInit {
     try {
       const now = new Date();
       const configWithTimestamps = {
-        ...config,
+        paramKey: config.paramKey,
+        value: config.value,
+        description: config.description || '',
         createdAt: now,
         updatedAt: now,
       };
@@ -52,6 +81,7 @@ export class AppConfigService implements OnModuleInit {
       const docRef = await this.getFirestoreInstance().collection(this.collection).add(configWithTimestamps);
       return { id: docRef.id, ...configWithTimestamps };
     } catch (error) {
+      this.logger.error(`Failed to create app configuration: ${error.message}`, error.stack);
       throw new Error(`Failed to create app configuration: ${error.message}`);
     }
   }
@@ -73,8 +103,17 @@ export class AppConfigService implements OnModuleInit {
       await docRef.update(updatedConfig);
 
       const updatedDoc = await docRef.get();
-      return { id: updatedDoc.id, ...updatedDoc.data() } as AppConfig;
+      const data = updatedDoc.data();
+
+      return {
+        id: updatedDoc.id,
+        ...data,
+        paramKey: data.paramKey || '',
+        value: data.value || '',
+        description: data.description || ''
+      } as AppConfig;
     } catch (error) {
+      this.logger.error(`Failed to update app configuration: ${error.message}`, error.stack);
       throw new Error(`Failed to update app configuration: ${error.message}`);
     }
   }
@@ -91,6 +130,7 @@ export class AppConfigService implements OnModuleInit {
       await docRef.delete();
       return true;
     } catch (error) {
+      this.logger.error(`Failed to delete app configuration: ${error.message}`, error.stack);
       throw new Error(`Failed to delete app configuration: ${error.message}`);
     }
   }

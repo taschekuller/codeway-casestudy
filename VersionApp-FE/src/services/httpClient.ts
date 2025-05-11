@@ -17,22 +17,24 @@ httpClient.interceptors.request.use(async (config) => {
 
     if (!token) {
       token = localStorage.getItem('token');
-      console.log('Using token from localStorage instead of auth hook');
+      console.log('[httpClient] Using token from localStorage instead of auth hook');
     }
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('Request with token (first 10 chars):', token.substring(0, 10) + '...');
+      console.log('[httpClient] Request to:', config.url);
+      console.log('[httpClient] Request with token (first 10 chars):', token.substring(0, 10) + '...');
     } else {
-      console.warn('No authentication token available for request');
+      console.warn('[httpClient] No authentication token available for request to:', config.url);
     }
   } catch (error) {
+    console.error('[httpClient] Auth error:', error);
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('Using fallback token from localStorage after error');
+      console.log('[httpClient] Using fallback token from localStorage after error');
     } else {
-      console.error('Failed to set authorization header:', error);
+      console.error('[httpClient] Failed to set authorization header:', error);
     }
   }
 
@@ -40,37 +42,41 @@ httpClient.interceptors.request.use(async (config) => {
 });
 
 httpClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(`[httpClient] Request to ${response.config.url} succeeded with status ${response.status}`);
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
+    const url = originalRequest?.url || 'unknown URL';
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      console.log('Got 401, trying to refresh token...');
+      console.log(`[httpClient] Got 401 from ${url}, trying to refresh token...`);
 
       try {
         const { getIdToken } = useAuth();
         const newToken = await getIdToken(true);
 
         if (newToken) {
-          console.log('Token refreshed successfully');
+          console.log('[httpClient] Token refreshed successfully');
           localStorage.setItem('token', newToken);
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return httpClient(originalRequest);
         } else {
-          console.warn('Token refresh returned empty token');
+          console.warn('[httpClient] Token refresh returned empty token');
         }
       } catch (refreshError) {
-        console.error('Error refreshing token:', refreshError);
+        console.error('[httpClient] Error refreshing token:', refreshError);
       }
     }
 
     if (error.response) {
-      console.error('Error response:', error.response.status, error.response.data);
+      console.error(`[httpClient] Error response from ${url}:`, error.response.status, error.response.data);
     } else if (error.request) {
-      console.error('No response received:', error.request);
+      console.error(`[httpClient] No response received from ${url}:`, error.request);
     } else {
-      console.error('Error message:', error.message);
+      console.error(`[httpClient] Error with request to ${url}:`, error.message);
     }
 
     return Promise.reject(error);

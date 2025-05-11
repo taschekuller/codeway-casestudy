@@ -1,15 +1,8 @@
 export interface AppConfig {
   id?: string;
-  appVersion: string;
-  forceUpdate: boolean;
-  minRequiredVersion: string;
-  maintenanceMode: boolean;
-  features: {
-    [key: string]: boolean;
-  };
-  remoteConfig: {
-    [key: string]: any;
-  };
+  paramKey: string;
+  value: string;
+  description: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
