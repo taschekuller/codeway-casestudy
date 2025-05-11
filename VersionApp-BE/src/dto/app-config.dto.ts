@@ -1,10 +1,12 @@
 import { IsNotEmpty, IsString, IsBoolean, IsObject, ValidateNested, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 
+// Dynamic object with string keys and boolean values
 export class FeaturesDto {
   [key: string]: boolean;
 }
 
+// Dynamic object with string keys and any values
 export class RemoteConfigDto {
   [key: string]: any;
 }
@@ -28,15 +30,11 @@ export class CreateAppConfigDto {
 
   @IsNotEmpty()
   @IsObject()
-  @ValidateNested()
-  @Type(() => FeaturesDto)
-  features: FeaturesDto;
+  features: Record<string, boolean>;
 
   @IsNotEmpty()
   @IsObject()
-  @ValidateNested()
-  @Type(() => RemoteConfigDto)
-  remoteConfig: RemoteConfigDto;
+  remoteConfig: Record<string, any>;
 }
 
 export class UpdateAppConfigDto {
@@ -58,13 +56,9 @@ export class UpdateAppConfigDto {
 
   @IsOptional()
   @IsObject()
-  @ValidateNested()
-  @Type(() => FeaturesDto)
-  features?: FeaturesDto;
+  features?: Record<string, boolean>;
 
   @IsOptional()
   @IsObject()
-  @ValidateNested()
-  @Type(() => RemoteConfigDto)
-  remoteConfig?: RemoteConfigDto;
+  remoteConfig?: Record<string, any>;
 }

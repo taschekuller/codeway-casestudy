@@ -51,8 +51,10 @@ import { colors } from '@/constants/theme'
 import { auth } from '@/lib/firebase'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { useRouter } from 'vue-router'
+import { useAuth } from '@/hooks/useAuth'
 
 const router = useRouter()
+const { getIdToken } = useAuth()
 const email = ref('')
 const password = ref('')
 const isLoading = ref(false)
@@ -68,17 +70,49 @@ async function handleSignIn() {
     isLoading.value = true
     error.value = ''
 
+    // Sign in with Firebase
     const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value)
+
+    // Get fresh token
+    const token = await userCredential.user.getIdToken(true)
+    console.log('Firebase auth successful, token retrieved')
+
     // Store the token in localStorage
-    const token = await userCredential.user.getIdToken()
     localStorage.setItem('token', token)
 
-    router.push('/') // Redirect to home page after successful sign in
+    // Auto-refresh token every 30 minutes (tokens expire after 1 hour)
+    scheduleTokenRefresh()
+
+    // Redirect to home page after successful sign in
+    router.push('/')
   } catch (err) {
     console.error('Sign in error:', err)
     error.value = err.message || 'Failed to sign in. Please try again.'
   } finally {
     isLoading.value = false
   }
+}
+
+function scheduleTokenRefresh() {
+  // Refresh token every 30 minutes
+  const REFRESH_INTERVAL = 30 * 60 * 1000 // 30 minutes
+
+  // Clear any existing refresh interval
+  if (window.tokenRefreshInterval) {
+    clearInterval(window.tokenRefreshInterval)
+  }
+
+  // Set new refresh interval
+  window.tokenRefreshInterval = setInterval(async () => {
+    try {
+      const newToken = await getIdToken(true)
+      if (newToken) {
+        localStorage.setItem('token', newToken)
+        console.log('Token refreshed automatically')
+      }
+    } catch (err) {
+      console.error('Failed to refresh token:', err)
+    }
+  }, REFRESH_INTERVAL)
 }
 </script>

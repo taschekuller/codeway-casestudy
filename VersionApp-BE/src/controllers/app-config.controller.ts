@@ -1,19 +1,74 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, NotFoundException, UseGuards, ValidationPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  NotFoundException,
+  UseGuards,
+  Logger,
+} from '@nestjs/common';
 import { AppConfigService } from '../services/app-config.service';
 import { AppConfig } from '../models/app-config.model';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import { ApiTokenGuard } from '../auth/api-token.guard';
-import { CreateAppConfigDto, UpdateAppConfigDto } from '../dto/app-config.dto';
 
 @Controller('app-config')
 export class AppConfigController {
+  private readonly logger = new Logger(AppConfigController.name);
+
   constructor(private readonly appConfigService: AppConfigService) { }
 
   // Endpoint for panel users to create a new configuration (requires Firebase auth)
   @Post()
   @UseGuards(FirebaseAuthGuard)
-  async createAppConfig(@Body(ValidationPipe) createDto: CreateAppConfigDto): Promise<AppConfig> {
-    return this.appConfigService.createAppConfig(createDto as AppConfig);
+  async createAppConfig(@Body() createDto: any): Promise<AppConfig> {
+    this.logger.log(
+      `Received create request with data: ${JSON.stringify(createDto)}`,
+    );
+
+    try {
+      // Basic validation that required fields are present
+      if (!createDto.appVersion || !createDto.minRequiredVersion) {
+        throw new Error('Missing required fields');
+      }
+
+      // Transform boolean values if needed
+      const configData = {
+        ...createDto,
+        forceUpdate: Boolean(createDto.forceUpdate),
+        maintenanceMode: Boolean(createDto.maintenanceMode),
+        features: createDto.features || {},
+        remoteConfig: createDto.remoteConfig || {},
+      };
+
+      return this.appConfigService.createAppConfig(configData as AppConfig);
+    } catch (error) {
+      this.logger.error(`Error creating config: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  // Debug endpoint to test payload format
+  @Post('debug')
+  @UseGuards(FirebaseAuthGuard)
+  async debugCreateConfig(@Body() createDto: any): Promise<any> {
+    this.logger.log(
+      `Received debug create request with data: ${JSON.stringify(createDto)}`,
+    );
+    return {
+      received: createDto,
+      featuresType: typeof createDto.features,
+      remoteConfigType: typeof createDto.remoteConfig,
+      validation: {
+        hasAppVersion: !!createDto.appVersion,
+        hasMinRequiredVersion: !!createDto.minRequiredVersion,
+        hasFeaturesObject: typeof createDto.features === 'object',
+        hasRemoteConfigObject: typeof createDto.remoteConfig === 'object',
+      },
+    };
   }
 
   // Endpoint for panel users to update a configuration (requires Firebase auth)
@@ -21,19 +76,44 @@ export class AppConfigController {
   @UseGuards(FirebaseAuthGuard)
   async updateAppConfig(
     @Param('id') id: string,
-    @Body(ValidationPipe) updateDto: UpdateAppConfigDto,
+    @Body() updateDto: any,
   ): Promise<AppConfig> {
-    const updatedConfig = await this.appConfigService.updateAppConfig(id, updateDto);
-    if (!updatedConfig) {
-      throw new NotFoundException(`App configuration with ID ${id} not found`);
+    this.logger.log(
+      `Received update request for id ${id} with data: ${JSON.stringify(updateDto)}`,
+    );
+
+    try {
+      // Transform boolean values if needed
+      const configData = { ...updateDto };
+      if ('forceUpdate' in configData) {
+        configData.forceUpdate = Boolean(configData.forceUpdate);
+      }
+      if ('maintenanceMode' in configData) {
+        configData.maintenanceMode = Boolean(configData.maintenanceMode);
+      }
+
+      const updatedConfig = await this.appConfigService.updateAppConfig(
+        id,
+        configData,
+      );
+      if (!updatedConfig) {
+        throw new NotFoundException(
+          `App configuration with ID ${id} not found`,
+        );
+      }
+      return updatedConfig;
+    } catch (error) {
+      this.logger.error(`Error updating config: ${error.message}`, error.stack);
+      throw error;
     }
-    return updatedConfig;
   }
 
   // Endpoint for panel users to delete a configuration (requires Firebase auth)
   @Delete(':id')
   @UseGuards(FirebaseAuthGuard)
-  async deleteAppConfig(@Param('id') id: string): Promise<{ success: boolean }> {
+  async deleteAppConfig(
+    @Param('id') id: string,
+  ): Promise<{ success: boolean }> {
     const success = await this.appConfigService.deleteAppConfig(id);
     if (!success) {
       throw new NotFoundException(`App configuration with ID ${id} not found`);

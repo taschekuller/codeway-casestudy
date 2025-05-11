@@ -6,13 +6,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Enable validation globally but allow unknown properties
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: false, // Don't strip unknown properties
-      transform: true,
-      forbidNonWhitelisted: false, // Don't throw errors for unknown properties
-    }),
-  );
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: false,     // Don't strip unknown properties
+    transform: true,
+    forbidNonWhitelisted: false, // Don't throw errors for unknown properties
+  }));
 
   // Enable CORS
   app.enableCors();
