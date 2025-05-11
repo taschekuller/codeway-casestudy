@@ -31,7 +31,7 @@
         <div>{{ config.minRequiredVersion }}</div>
         <div>{{ config.forceUpdate ? 'Yes' : 'No' }}</div>
         <div>{{ config.maintenanceMode ? 'Yes' : 'No' }}</div>
-        <div>{{ formatDate(config.createdAt) }}</div>
+        <div>{{ formatDate(config.createdAt instanceof Date ? config.createdAt : new Date(config.createdAt)) }}</div>
         <div class="flex space-x-2">
           <Button size="sm" @click="editConfig(config)" class="bg-gradient-to-r from-[#2e69f5] to-[#2284f7] hover:from-[#1e59e5] hover:to-[#1274e7] text-white font-bold transition-all duration-200 cursor-pointer">Edit</Button>
           <Button size="sm" @click="deleteConfig(config.id)" class="bg-gradient-to-r from-[#f13941] to-[#f94f73] hover:from-[#e12931] hover:to-[#e93f63] text-white font-bold transition-all duration-200 cursor-pointer">Delete</Button>
@@ -111,7 +111,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ArrowDownIcon, UserIcon, ChevronDown } from 'lucide-vue-next'
+import { UserIcon, ChevronDown } from 'lucide-vue-next'
 import { colors } from '@/constants/theme'
 import { useAuth } from '@/hooks/useAuth'
 import { appConfigService } from '@/services/appConfig'
@@ -147,16 +147,13 @@ onMounted(async () => {
   try {
     loading.value = true
 
-    // Try to ensure we have a valid token first
     const token = localStorage.getItem('token')
     if (!token) {
-      console.warn('No token in localStorage, checking if we can get a fresh one...')
+      console.warn('No token in localStorage.')
       await refreshUserToken()
     } else {
       console.log('Found token in localStorage, length:', token.length)
     }
-
-    // Now try to fetch configurations
     await fetchConfigurations()
   } catch (error) {
     console.error('Failed to initialize dashboard:', error)
@@ -165,7 +162,6 @@ onMounted(async () => {
   }
 })
 
-// Function to refresh user token
 async function refreshUserToken() {
   try {
     const { getIdToken } = useAuth()
@@ -184,17 +180,15 @@ async function refreshUserToken() {
   }
 }
 
-// Function to fetch configurations
 async function fetchConfigurations() {
   try {
     console.log('Fetching configurations...')
     const data = await appConfigService.getAllConfigs()
-    console.log('Configurations fetched successfully:', data.length)
+    console.log('Configurations fetched successfully')
     appConfigs.value = data
   } catch (error) {
     console.error('Failed to fetch configurations:', error)
 
-    // Try to refresh token on error
     if (error.response?.status === 401) {
       console.log('Unauthorized error, trying to refresh token...')
       const refreshed = await refreshUserToken()
@@ -240,16 +234,13 @@ function resetForm() {
 
 function validateFeatures() {
   try {
-    // Parse JSON string to object
     const parsed = JSON.parse(featuresJson.value);
 
-    // Check if it's an object
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
       featuresError.value = 'Features must be a JSON object';
       return;
     }
 
-    // Ensure all values are boolean
     let valid = true;
     Object.entries(parsed).forEach(([key, value]) => {
       if (typeof value !== 'boolean') {
@@ -262,7 +253,6 @@ function validateFeatures() {
       return;
     }
 
-    // If all checks pass, update formData
     featuresError.value = '';
     formData.value.features = parsed;
   } catch (error) {
@@ -272,16 +262,13 @@ function validateFeatures() {
 
 function validateRemoteConfig() {
   try {
-    // Parse JSON string to object
     const parsed = JSON.parse(remoteConfigJson.value);
 
-    // Check if it's an object
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
       remoteConfigError.value = 'Remote config must be a JSON object';
       return;
     }
 
-    // Update formData if valid
     remoteConfigError.value = '';
     formData.value.remoteConfig = parsed;
   } catch (error) {
@@ -319,17 +306,14 @@ async function saveConfig() {
   try {
     loading.value = true;
 
-    // Store features and remoteConfig separately, since we won't send them to the backend
     const savedFeatures = formData.value.features;
     const savedRemoteConfig = formData.value.remoteConfig;
 
-    // Send only the basic fields to the backend
     const configToSave = {
       appVersion: formData.value.appVersion.trim(),
       minRequiredVersion: formData.value.minRequiredVersion.trim(),
       forceUpdate: Boolean(formData.value.forceUpdate),
       maintenanceMode: Boolean(formData.value.maintenanceMode),
-      // Use empty objects as the backend requires these fields but rejects dynamic properties
       features: {},
       remoteConfig: {}
     };
@@ -337,10 +321,8 @@ async function saveConfig() {
     console.log('Saving configuration:', configToSave);
 
     if (showEditForm.value) {
-      // Update existing config
       const updatedConfig = await appConfigService.updateConfig(editingConfigId.value, configToSave);
 
-      // Merge the server response with our locally stored features and remoteConfig
       updatedConfig.features = savedFeatures;
       updatedConfig.remoteConfig = savedRemoteConfig;
 
@@ -351,10 +333,8 @@ async function saveConfig() {
 
       console.log('Config updated successfully');
     } else {
-      // Create new config
       const newConfig = await appConfigService.createConfig(configToSave);
 
-      // Merge the server response with our locally stored features and remoteConfig
       newConfig.features = savedFeatures;
       newConfig.remoteConfig = savedRemoteConfig;
 
@@ -367,7 +347,6 @@ async function saveConfig() {
   } catch (error) {
     console.error('Failed to save configuration:', error);
 
-    // Show more details on validation errors
     if (error.response) {
       if (error.response.status === 400) {
         let errorMessage = 'Validation error';

@@ -14,7 +14,6 @@ interface AppConfig {
 }
 
 export const appConfigService = {
-  // Get all app configurations (requires Firebase authentication)
   async getAllConfigs(): Promise<AppConfig[]> {
     try {
       const response = await httpClient.get('/app-config/admin');
@@ -25,7 +24,6 @@ export const appConfigService = {
     }
   },
 
-  // Get a specific configuration by ID (requires Firebase authentication)
   async getConfigById(id: string): Promise<AppConfig> {
     try {
       const response = await httpClient.get(`/app-config/admin/${id}`);
@@ -36,7 +34,6 @@ export const appConfigService = {
     }
   },
 
-  // Create a new configuration (requires Firebase authentication)
   async createConfig(config: Omit<AppConfig, 'id' | 'createdAt' | 'updatedAt'>): Promise<AppConfig> {
     try {
       const configToSend = {
@@ -62,7 +59,6 @@ export const appConfigService = {
     }
   },
 
-  // Update an existing configuration (requires Firebase authentication)
   async updateConfig(id: string, config: Partial<AppConfig>): Promise<AppConfig> {
     try {
       const configToSend = {
@@ -88,7 +84,6 @@ export const appConfigService = {
     }
   },
 
-  // Delete a configuration (requires Firebase authentication)
   async deleteConfig(id: string): Promise<{ success: boolean }> {
     try {
       const response = await httpClient.delete(`/app-config/${id}`);

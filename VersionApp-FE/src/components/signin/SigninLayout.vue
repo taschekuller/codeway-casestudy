@@ -70,7 +70,6 @@ async function handleSignIn() {
     isLoading.value = true
     error.value = ''
 
-    // Sign in with Firebase
     const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value)
 
     // Get fresh token
@@ -83,7 +82,6 @@ async function handleSignIn() {
     // Auto-refresh token every 30 minutes (tokens expire after 1 hour)
     scheduleTokenRefresh()
 
-    // Redirect to home page after successful sign in
     router.push('/')
   } catch (err) {
     console.error('Sign in error:', err)

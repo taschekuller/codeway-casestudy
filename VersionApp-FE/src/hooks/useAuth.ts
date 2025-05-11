@@ -12,7 +12,6 @@ export const useAuth = () => {
   const loading = ref(true);
   const error = ref<string | null>(null);
 
-  // Get the current ID token
   const getIdToken = async (forceRefresh = false): Promise<string | null> => {
     if (!user.value) return null;
     try {
@@ -23,7 +22,6 @@ export const useAuth = () => {
     }
   };
 
-  // Sign in with email and password
   const signIn = async (email: string, password: string) => {
     try {
       error.value = null;
@@ -34,7 +32,6 @@ export const useAuth = () => {
     }
   };
 
-  // Sign out
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);

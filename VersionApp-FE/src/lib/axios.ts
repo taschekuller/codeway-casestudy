@@ -8,7 +8,6 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to add auth token
 api.interceptors.request.use(
   async (config) => {
     const user = auth.currentUser;
@@ -23,7 +22,6 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle token expiration
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
