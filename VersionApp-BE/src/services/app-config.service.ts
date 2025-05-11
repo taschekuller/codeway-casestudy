@@ -7,7 +7,6 @@ export class AppConfigService implements OnModuleInit {
   private firestore;
 
   onModuleInit() {
-    // Initialize Firestore when the module is ready
     this.firestore = getFirestore();
   }
 

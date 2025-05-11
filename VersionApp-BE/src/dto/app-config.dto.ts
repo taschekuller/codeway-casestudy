@@ -1,12 +1,15 @@
-import { IsNotEmpty, IsString, IsBoolean, IsObject, ValidateNested, IsOptional } from 'class-validator';
-import { Type } from 'class-transformer';
+import {
+  IsNotEmpty,
+  IsString,
+  IsBoolean,
+  IsObject,
+  IsOptional,
+} from 'class-validator';
 
-// Dynamic object with string keys and boolean values
 export class FeaturesDto {
   [key: string]: boolean;
 }
 
-// Dynamic object with string keys and any values
 export class RemoteConfigDto {
   [key: string]: any;
 }

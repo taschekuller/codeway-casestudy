@@ -21,7 +21,6 @@ export class AppConfigController {
 
   constructor(private readonly appConfigService: AppConfigService) { }
 
-  // Endpoint for panel users to create a new configuration (requires Firebase auth)
   @Post()
   @UseGuards(FirebaseAuthGuard)
   async createAppConfig(@Body() createDto: any): Promise<AppConfig> {
@@ -30,12 +29,10 @@ export class AppConfigController {
     );
 
     try {
-      // Basic validation that required fields are present
       if (!createDto.appVersion || !createDto.minRequiredVersion) {
         throw new Error('Missing required fields');
       }
 
-      // Transform boolean values if needed
       const configData = {
         ...createDto,
         forceUpdate: Boolean(createDto.forceUpdate),
@@ -51,7 +48,6 @@ export class AppConfigController {
     }
   }
 
-  // Debug endpoint to test payload format
   @Post('debug')
   @UseGuards(FirebaseAuthGuard)
   async debugCreateConfig(@Body() createDto: any): Promise<any> {
@@ -71,7 +67,6 @@ export class AppConfigController {
     };
   }
 
-  // Endpoint for panel users to update a configuration (requires Firebase auth)
   @Put(':id')
   @UseGuards(FirebaseAuthGuard)
   async updateAppConfig(
@@ -83,7 +78,6 @@ export class AppConfigController {
     );
 
     try {
-      // Transform boolean values if needed
       const configData = { ...updateDto };
       if ('forceUpdate' in configData) {
         configData.forceUpdate = Boolean(configData.forceUpdate);
@@ -108,7 +102,6 @@ export class AppConfigController {
     }
   }
 
-  // Endpoint for panel users to delete a configuration (requires Firebase auth)
   @Delete(':id')
   @UseGuards(FirebaseAuthGuard)
   async deleteAppConfig(
@@ -121,14 +114,12 @@ export class AppConfigController {
     return { success };
   }
 
-  // Endpoint for panel users to get all configurations (requires Firebase auth)
   @Get('admin')
   @UseGuards(FirebaseAuthGuard)
   async getAllAppConfigs(): Promise<AppConfig[]> {
     return this.appConfigService.getAllAppConfigs();
   }
 
-  // Endpoint for panel users to get a specific configuration (requires Firebase auth)
   @Get('admin/:id')
   @UseGuards(FirebaseAuthGuard)
   async getAppConfigForAdmin(@Param('id') id: string): Promise<AppConfig> {
@@ -139,7 +130,6 @@ export class AppConfigController {
     return config;
   }
 
-  // Endpoint for mobile client to get a specific configuration (requires API token)
   @Get(':id')
   @UseGuards(ApiTokenGuard)
   async getAppConfig(@Param('id') id: string): Promise<AppConfig> {

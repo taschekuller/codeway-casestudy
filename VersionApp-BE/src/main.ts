@@ -8,13 +8,12 @@ async function bootstrap() {
   // Enable validation globally but allow unknown properties
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: false, // Don't strip unknown properties
+      whitelist: false,
       transform: true,
       forbidNonWhitelisted: false, // Don't throw errors for unknown properties
     }),
   );
 
-  // Enable CORS
   app.enableCors();
 
   const port = process.env.PORT || 3000;
