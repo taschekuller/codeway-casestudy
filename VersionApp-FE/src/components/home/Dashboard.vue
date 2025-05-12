@@ -16,16 +16,32 @@
     </div>
 
     <div v-else>
+      <!-- Mobile Sort Button -->
+      <div class="md:hidden mb-4">
+        <Button @click="toggleSortDirection" class="bg-[#2a2a3c] text-white flex items-center gap-2">
+          <span>Sort by Date: {{ sortDirection === 'asc' ? 'Oldest First' : 'Newest First' }}</span>
+          <ArrowUp v-if="sortDirection === 'asc'" class="h-4 w-4" />
+          <ArrowDown v-if="sortDirection === 'desc'" class="h-4 w-4" />
+        </Button>
+      </div>
+
       <!-- Table Headers -->
       <div class="hidden md:grid md:grid-cols-5 text-left mb-4" :style="{ color: colors.dashboardTitle, fontSize: '1.5rem' }">
         <div>Parameter Key</div>
         <div>Value</div>
         <div>Description</div>
-        <div>Create Date</div>
+        <div class="flex items-center gap-2 cursor-pointer" @click="toggleSortDirection">
+          Create Date
+          <div class="flex items-center">
+            <ArrowUp v-if="sortDirection === 'asc'" class="h-4 w-4" />
+            <ArrowDown v-if="sortDirection === 'desc'" class="h-4 w-4" />
+          </div>
+        </div>
+        <div>Actions</div>
       </div>
 
       <div class="space-y-4">
-        <div v-for="config in appConfigs" :key="config.id" class="md:grid md:grid-cols-5   bg-[#2a2a3c] md:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 mb-4 md:mb-0 items-start md:items-center py-2">
+        <div v-for="config in sortedConfigs" :key="config.id" class="md:grid md:grid-cols-5   bg-[#2a2a3c] md:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 mb-4 md:mb-0 items-start md:items-center py-2">
           <div class="mb-2 md:mb-0">
             <div class="font-bold md:hidden">Parameter Key</div>
             {{ config.paramKey }}
@@ -39,7 +55,7 @@
             {{ config.description || 'N/A' }}
           </div>
           <div class="mb-2 md:mb-0">
-            <div class="font-bold md:hidden">Created At</div>
+            <div class="font-bold md:hidden">Create Date</div>
             {{ formatDate(config.createdAt) }}
           </div>
           <div class="flex space-x-2 mt-2 md:mt-0">
@@ -98,18 +114,27 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { UserIcon, ChevronDown } from 'lucide-vue-next'
+import { UserIcon, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-vue-next'
 import { colors } from '@/constants/theme'
 import { useAuth } from '@/hooks/useAuth'
 import { appConfigService } from '@/services/appConfig'
+import { useDateFormat } from '@/hooks/useDateFormat'
+import { useTokenManagement } from '@/hooks/useTokenManagement'
+import { useSortableData } from '@/hooks/useSortableData'
 
 const router = useRouter()
 const { signOut } = useAuth()
+const { formatDate } = useDateFormat()
+const { refreshUserToken, ensureValidToken } = useTokenManagement()
 
 const loading = ref(true)
 const appConfigs = ref([])
 const showCreateForm = ref(false)
 const showEditForm = ref(false)
+
+// Use the sortable data hook
+const { sortDirection, toggleSortDirection, sortByDate } = useSortableData(appConfigs)
+const sortedConfigs = sortByDate('createdAt')
 
 const formData = ref({
   paramKey: '',
@@ -122,14 +147,7 @@ const editingConfigId = ref(null)
 onMounted(async () => {
   try {
     loading.value = true
-
-    const token = localStorage.getItem('token')
-    if (!token) {
-      console.warn('No token in localStorage.')
-      await refreshUserToken()
-    } else {
-      console.log('Found token in localStorage, length:', token.length)
-    }
+    await ensureValidToken()
     await fetchConfigurations()
   } catch (error) {
     console.error('Failed to initialize dashboard:', error)
@@ -138,31 +156,9 @@ onMounted(async () => {
   }
 })
 
-async function refreshUserToken() {
-  try {
-    const { getIdToken } = useAuth()
-    const newToken = await getIdToken(true)
-    if (newToken) {
-      localStorage.setItem('token', newToken)
-      console.log('Token refreshed and saved to localStorage')
-      return true
-    } else {
-      console.warn('Could not get a fresh token')
-      return false
-    }
-  } catch (error) {
-    console.error('Error refreshing token:', error)
-    return false
-  }
-}
-
 async function fetchConfigurations() {
   try {
-    console.log('Fetching configurations...')
     const data = await appConfigService.getAllConfigs()
-    console.log('Configurations fetched successfully')
-
-    console.log('Raw config data:', data)
 
     appConfigs.value = data.map(config => {
       const processedConfig = {
@@ -172,15 +168,9 @@ async function fetchConfigurations() {
         description: config.description || 'Migrated from previous format'
       }
 
-      if (config.createdAt) {
-        // Check if createdAt is a Firestore timestamp object with _seconds and _nanoseconds
-        if (config.createdAt._seconds && config.createdAt._nanoseconds) {
-          processedConfig.createdAt = new Date(config.createdAt._seconds * 1000)
-          console.log('Converted Firestore timestamp with _seconds:', processedConfig.createdAt)
-        }
-
-      } else {
-        processedConfig.createdAt = null
+      // Process Firestore timestamp if needed (ensure proper Date object for display)
+      if (config.createdAt && config.createdAt._seconds && config.createdAt._nanoseconds) {
+        processedConfig.createdAt = new Date(config.createdAt._seconds * 1000)
       }
 
       return processedConfig
@@ -189,83 +179,23 @@ async function fetchConfigurations() {
     console.error('Failed to fetch configurations:', error)
 
     if (error.response?.status === 401) {
-      console.log('Unauthorized error, trying to refresh token...')
+      // Token expired, try to refresh and retry
       const refreshed = await refreshUserToken()
       if (refreshed) {
-        console.log('Token refreshed, trying to fetch configurations again...')
         try {
+          // Retry with fresh token
           const data = await appConfigService.getAllConfigs()
-          appConfigs.value = data.map(config => {
-            return {
-              ...config,
-              paramKey: config.paramKey || (config.appVersion ? 'min_version' : 'unknown_param'),
-              value: config.value || config.minRequiredVersion || config.appVersion || 'N/A',
-              description: config.description || 'Migrated from previous format'
-            }
-          })
-          console.log('Configurations fetched after token refresh')
+          appConfigs.value = data.map(config => ({
+            ...config,
+            paramKey: config.paramKey || (config.appVersion ? 'min_version' : 'unknown_param'),
+            value: config.value || config.minRequiredVersion || config.appVersion || 'N/A',
+            description: config.description || 'Migrated from previous format'
+          }))
         } catch (retryError) {
-          console.error('Still failed after token refresh:', retryError)
+          console.error('Failed to fetch configurations after token refresh:', retryError)
         }
       }
     }
-  }
-}
-
-function formatDate(date) {
-  if (!date) return 'N/A'
-
-  try {
-    // If it's a Firestore timestamp with _seconds and _nanoseconds
-    if (date && typeof date === 'object' && date._seconds && date._nanoseconds) {
-      return new Date(date._seconds * 1000).toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    }
-
-    // If it's a Firestore timestamp with seconds and nanoseconds || TODO might be unnecessary
-    if (date && typeof date === 'object' && date.seconds && date.nanoseconds) {
-      return new Date(date.seconds * 1000).toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    }
-
-    // If it's already a Date object
-    if (date instanceof Date) {
-      return date.toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    }
-
-    const parsedDate = new Date(date)
-
-    if (isNaN(parsedDate.getTime())) {
-      console.log('Invalid date detected:', date)
-      return 'N/A'
-    }
-
-    return parsedDate.toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  } catch (error) {
-    console.error('Error formatting date:', error)
-    return 'N/A'
   }
 }
 
