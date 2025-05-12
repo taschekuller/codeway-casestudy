@@ -21,7 +21,7 @@
         <div>Parameter Key</div>
         <div>Value</div>
         <div>Description</div>
-        <div>Created At</div>
+        <div>Create Date</div>
       </div>
 
       <div class="space-y-4">
@@ -40,7 +40,7 @@
           </div>
           <div class="mb-2 md:mb-0">
             <div class="font-bold md:hidden">Created At</div>
-            {{ formatDate(config.createdAt instanceof Date ? config.createdAt : new Date(config.createdAt)) }}
+            {{ formatDate(config.createdAt) }}
           </div>
           <div class="flex space-x-2 mt-2 md:mt-0">
             <Button size="sm" @click="editConfig(config)" class="bg-gradient-to-r from-[#2e69f5] to-[#2284f7] hover:from-[#1e59e5] hover:to-[#1274e7] text-white font-bold transition-all duration-200 cursor-pointer">Edit</Button>
@@ -94,7 +94,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -162,14 +162,28 @@ async function fetchConfigurations() {
     const data = await appConfigService.getAllConfigs()
     console.log('Configurations fetched successfully')
 
-    // Ensure all records have the required fields
+    console.log('Raw config data:', data)
+
     appConfigs.value = data.map(config => {
-      return {
+      const processedConfig = {
         ...config,
         paramKey: config.paramKey || (config.appVersion ? 'min_version' : 'unknown_param'),
         value: config.value || config.minRequiredVersion || config.appVersion || 'N/A',
         description: config.description || 'Migrated from previous format'
       }
+
+      if (config.createdAt) {
+        // Check if createdAt is a Firestore timestamp object with _seconds and _nanoseconds
+        if (config.createdAt._seconds && config.createdAt._nanoseconds) {
+          processedConfig.createdAt = new Date(config.createdAt._seconds * 1000)
+          console.log('Converted Firestore timestamp with _seconds:', processedConfig.createdAt)
+        }
+
+      } else {
+        processedConfig.createdAt = null
+      }
+
+      return processedConfig
     })
   } catch (error) {
     console.error('Failed to fetch configurations:', error)
@@ -181,7 +195,6 @@ async function fetchConfigurations() {
         console.log('Token refreshed, trying to fetch configurations again...')
         try {
           const data = await appConfigService.getAllConfigs()
-          // Ensure all records have the required fields
           appConfigs.value = data.map(config => {
             return {
               ...config,
@@ -201,13 +214,59 @@ async function fetchConfigurations() {
 
 function formatDate(date) {
   if (!date) return 'N/A'
-  return new Date(date).toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+
+  try {
+    // If it's a Firestore timestamp with _seconds and _nanoseconds
+    if (date && typeof date === 'object' && date._seconds && date._nanoseconds) {
+      return new Date(date._seconds * 1000).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    }
+
+    // If it's a Firestore timestamp with seconds and nanoseconds || TODO might be unnecessary
+    if (date && typeof date === 'object' && date.seconds && date.nanoseconds) {
+      return new Date(date.seconds * 1000).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    }
+
+    // If it's already a Date object
+    if (date instanceof Date) {
+      return date.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    }
+
+    const parsedDate = new Date(date)
+
+    if (isNaN(parsedDate.getTime())) {
+      console.log('Invalid date detected:', date)
+      return 'N/A'
+    }
+
+    return parsedDate.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch (error) {
+    console.error('Error formatting date:', error)
+    return 'N/A'
+  }
 }
 
 function resetForm() {
@@ -225,7 +284,6 @@ function cancelForm() {
 }
 
 function editConfig(config) {
-  // Handle potential legacy data
   formData.value = {
     paramKey: config.paramKey || (config.appVersion ? 'min_version' : 'unknown_param'),
     value: config.value || config.minRequiredVersion || config.appVersion || '',
