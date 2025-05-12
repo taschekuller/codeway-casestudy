@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-[#1e1e2f] to-[#1e1e24] p-8 text-white">
+  <div class="min-h-screen bg-gradient-to-b from-[#1e1e2f] to-[#1e1e24] p-4 md:p-8 text-white">
     <div class="flex justify-between items-center mb-8">
       <img src="/assets/codeway/codewayLogo.png" alt="Logo" class="w-12 h-8" />
       <div>
@@ -17,21 +17,35 @@
 
     <div v-else>
       <!-- Table Headers -->
-      <div class="grid grid-cols-4 text-left mb-4" :style="{ color: colors.dashboardTitle, fontSize: '1.5rem' }">
+      <div class="hidden md:grid md:grid-cols-5 text-left mb-4" :style="{ color: colors.dashboardTitle, fontSize: '1.5rem' }">
         <div>Parameter Key</div>
         <div>Value</div>
         <div>Description</div>
         <div>Created At</div>
       </div>
 
-      <div v-for="config in appConfigs" :key="config.id" class="grid grid-cols-5 items-center py-2">
-        <div>{{ config.paramKey }}</div>
-        <div>{{ config.value }}</div>
-        <div>{{ config.description || 'N/A' }}</div>
-        <div>{{ formatDate(config.createdAt instanceof Date ? config.createdAt : new Date(config.createdAt)) }}</div>
-        <div class="flex space-x-2">
-          <Button size="sm" @click="editConfig(config)" class="bg-gradient-to-r from-[#2e69f5] to-[#2284f7] hover:from-[#1e59e5] hover:to-[#1274e7] text-white font-bold transition-all duration-200 cursor-pointer">Edit</Button>
-          <Button size="sm" @click="deleteConfig(config.id)" class="bg-gradient-to-r from-[#f13941] to-[#f94f73] hover:from-[#e12931] hover:to-[#e93f63] text-white font-bold transition-all duration-200 cursor-pointer">Delete</Button>
+      <div class="space-y-4">
+        <div v-for="config in appConfigs" :key="config.id" class="md:grid md:grid-cols-5   bg-[#2a2a3c] md:bg-transparent rounded-lg md:rounded-none p-4 md:p-0 mb-4 md:mb-0 items-start md:items-center py-2">
+          <div class="mb-2 md:mb-0">
+            <div class="font-bold md:hidden">Parameter Key</div>
+            {{ config.paramKey }}
+          </div>
+          <div class="mb-2 md:mb-0">
+            <div class="font-bold md:hidden">Value</div>
+            {{ config.value }}
+          </div>
+          <div class="mb-2 md:mb-0">
+            <div class="font-bold md:hidden">Description</div>
+            {{ config.description || 'N/A' }}
+          </div>
+          <div class="mb-2 md:mb-0">
+            <div class="font-bold md:hidden">Created At</div>
+            {{ formatDate(config.createdAt instanceof Date ? config.createdAt : new Date(config.createdAt)) }}
+          </div>
+          <div class="flex space-x-2 mt-2 md:mt-0">
+            <Button size="sm" @click="editConfig(config)" class="bg-gradient-to-r from-[#2e69f5] to-[#2284f7] hover:from-[#1e59e5] hover:to-[#1274e7] text-white font-bold transition-all duration-200 cursor-pointer">Edit</Button>
+            <Button size="sm" @click="deleteConfig(config.id)" class="bg-gradient-to-r from-[#f13941] to-[#f94f73] hover:from-[#e12931] hover:to-[#e93f63] text-white font-bold transition-all duration-200 cursor-pointer">Delete</Button>
+          </div>
         </div>
       </div>
 
@@ -47,7 +61,7 @@
         <div class="bg-[#1e1e2f] p-6 rounded-lg w-full max-w-2xl">
           <h2 class="text-2xl mb-4">{{ showEditForm ? 'Edit Parameter' : 'Create New Parameter' }}</h2>
 
-          <div class="grid grid-cols-2 gap-4 mb-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label class="block mb-1">Parameter Key</label>
               <Input v-model="formData.paramKey" placeholder="min_version" class="border-gray-600" />
@@ -308,4 +322,9 @@ async function handleSignOut() {
 </script>
 
 <style scoped>
+@media (max-width: 768px) {
+  .grid-cols-5 {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
