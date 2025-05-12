@@ -1,98 +1,242 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# VersionApp Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS-based backend API for managing application configurations. This API provides endpoints for managing, retrieving, and updating configuration parameters used by mobile applications.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features
 
-## Description
+- RESTful API for configuration management
+- Firebase Authentication integration
+- Firestore database integration
+- Input validation
+- Error handling
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Tech Stack
 
-## Project setup
+- NestJS framework
+- Firebase Admin SDK
+- Firestore Database
+- TypeScript
+- Jest for testing
+
+## Prerequisites
+
+- Node.js 18.x or later
+- npm 8.x or later
+- Firebase project with Firestore and Authentication enabled
+- Firebase Admin SDK service account credentials
+
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd VersionApp-BE
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Set up Firebase credentials:
+
+   a. Go to your Firebase console
+   b. Navigate to Project settings > Service accounts
+   c. Generate a new private key (this will download a JSON file)
+   d. Rename the downloaded file to `firebase-service-account.json`
+   e. Place this file in the `src/config` directory
+
+4. Create a `.env` file in the root directory with the following variables:
+   ```
+   PORT=3000
+   NODE_ENV=development
+   FIREBASE_PROJECT_ID=your_firebase_project_id
+   FIREBASE_CLIENT_EMAIL=your_firebase_client_email
+   FIREBASE_PRIVATE_KEY="your_firebase_private_key"
+   FIREBASE_DATABASE_URL=https://your-firebase-database-url.firebaseio.com
+   FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
+   ALLOWED_ORIGINS=http://localhost:5173,https://your-frontend-domain.com
+   FIRESTORE_COLLECTION_APP_CONFIG=app-config
+   ```
+
+   Note: For `FIREBASE_PRIVATE_KEY`, include the quotes and paste the entire private key from your service account JSON file, including newline characters.
+
+## Development
+
+Start the development server:
 
 ```bash
-$ npm install
+npm run start:dev
 ```
 
-## Compile and run the project
+This will start the server in development mode with hot-reload at `http://localhost:3000`.
+
+## Building for Production
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm run build
 ```
 
-## Run tests
+This will create a production-ready build in the `dist` directory.
+
+## Running in Production
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm run start:prod
 ```
+
+## API Documentation
+
+Once the server is running, you can access the Swagger API documentation at:
+```
+http://localhost:3000/api-docs
+```
+
+### Main Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|--------------|
+| GET | /app-config/client | Get active app configuration for client | No |
+| GET | /app-config/admin | Get all configurations (admin) | Yes |
+| GET | /app-config/admin/:id | Get configuration by ID (admin) | Yes |
+| POST | /app-config | Create new configuration | Yes |
+| PUT | /app-config/:id | Update configuration | Yes |
+| DELETE | /app-config/:id | Delete configuration | Yes |
 
 ## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### Deploying to Firebase Cloud Functions
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+1. Install Firebase CLI:
+   ```bash
+   npm install -g firebase-tools
+   ```
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+2. Login to Firebase:
+   ```bash
+   firebase login
+   ```
+
+3. Initialize Firebase in your project:
+   ```bash
+   firebase init functions
+   ```
+   - Select your Firebase project
+   - Choose JavaScript or TypeScript
+   - Install dependencies? Yes
+
+4. Modify the `functions/index.js` file to serve your NestJS app:
+   ```javascript
+   const functions = require('firebase-functions');
+   const { NestFactory } = require('@nestjs/core');
+   const { ExpressAdapter } = require('@nestjs/platform-express');
+   const express = require('express');
+   const { AppModule } = require('./dist/app.module');
+
+   const server = express();
+
+   const createNestServer = async (expressInstance) => {
+     const app = await NestFactory.create(
+       AppModule,
+       new ExpressAdapter(expressInstance),
+     );
+     return app.init();
+   };
+
+   createNestServer(server)
+     .then(() => console.log('NestJS ready'))
+     .catch(err => console.error('NestJS error', err));
+
+   exports.api = functions.https.onRequest(server);
+   ```
+
+5. Build the NestJS app and deploy:
+   ```bash
+   npm run build
+   firebase deploy --only functions
+   ```
+
+## Environment Variables
+
+Here's a detailed list of all environment variables needed for the backend:
+
+```
+# Server Configuration
+PORT=3000                      # Port the server will run on
+NODE_ENV=development           # Environment (development, production, test)
+
+# Firebase Admin SDK Configuration
+FIREBASE_PROJECT_ID=your_firebase_project_id
+FIREBASE_CLIENT_EMAIL=your_firebase_client_email
+FIREBASE_PRIVATE_KEY="your_firebase_private_key"
+FIREBASE_DATABASE_URL=https://your-firebase-database-url.firebaseio.com
+FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
+
+# Firestore Configuration
+FIRESTORE_COLLECTION_APP_CONFIG=app-config
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Docker Deployment
 
-## Resources
+A Dockerfile is included in the repository for containerized deployment:
 
-Check out a few resources that may come in handy when working with NestJS:
+```Dockerfile
+FROM node:18-alpine
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+WORKDIR /app
 
-## Support
+COPY package*.json ./
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+RUN npm ci --production
 
-## Stay in touch
+COPY . .
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+RUN npm run build
+
+EXPOSE 3000
+
+CMD ["npm", "run", "start:prod"]
+```
+
+Build and run the Docker container:
+
+```bash
+docker build -t versionapp-be .
+docker run -p 3000:3000 --env-file .env versionapp-be
+```
+
+## Authentication
+
+This API uses Firebase Authentication. Protected endpoints require a valid Firebase JWT token in the `Authorization` header:
+
+```
+Authorization: Bearer <firebase_jwt_token>
+```
+
+## Error Handling
+
+The API provides detailed error responses with appropriate HTTP status codes:
+
+- 400: Bad Request (validation errors)
+- 401: Unauthorized (authentication issues)
+- 403: Forbidden (authorization issues)
+- 404: Not Found (resource not found)
+- 500: Internal Server Error (server-side issues)
+
+## Troubleshooting
+
+### Firebase Connection Issues
+
+- Verify your Firebase service account credentials
+- Check that Firestore is enabled in your Firebase project
+- Make sure the service account has appropriate permissions
+
+### Authentication Issues
+
+- Ensure Firebase Authentication is properly configured
+- Check that the client is sending the correct Authorization header
+- Verify that user accounts have the necessary permissions
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+[MIT License](LICENSE)
