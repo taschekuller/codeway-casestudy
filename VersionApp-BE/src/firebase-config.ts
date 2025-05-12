@@ -4,11 +4,11 @@ import { ConfigService } from '@nestjs/config';
 export const initializeFirebase = (configService: ConfigService) => {
   try {
     const serviceAccount = {
-      projectId: configService.get<string>('FIREBASE_PROJECT_ID'),
+      projectId: configService.get<string>('APP_PROJECT_ID'),
       privateKey: configService
-        .get<string>('FIREBASE_PRIVATE_KEY')
+        .get<string>('APP_PRIVATE_KEY')
         ?.replace(/\\n/g, '\n'),
-      clientEmail: configService.get<string>('FIREBASE_CLIENT_EMAIL'),
+      clientEmail: configService.get<string>('APP_CLIENT_EMAIL'),
     };
 
     // Check if Firebase is already initialized
@@ -17,7 +17,7 @@ export const initializeFirebase = (configService: ConfigService) => {
         credential: firebase.credential.cert(
           serviceAccount as firebase.ServiceAccount,
         ),
-        databaseURL: configService.get<string>('FIREBASE_DATABASE_URL'),
+        databaseURL: configService.get<string>('APP_DATABASE_URL'),
       });
       console.log('Firebase initialized successfully');
     } else {
