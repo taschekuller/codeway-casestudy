@@ -7,7 +7,7 @@ export class AppController {
   constructor(
     private readonly appService: AppService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   @Get()
   getHello(): string {
@@ -19,7 +19,7 @@ export class AppController {
     // Only returns if token exists, not the actual token for security
     const apiToken = this.configService.get<string>('API_TOKEN');
     return {
-      tokenExists: !!apiToken
+      tokenExists: !!apiToken,
     };
   }
 }
