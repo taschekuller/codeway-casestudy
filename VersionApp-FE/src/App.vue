@@ -1,31 +1,32 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterView } from 'vue-router'
+import { onMounted } from 'vue'
+import { useAuth } from './hooks/useAuth'
+
+const { getIdToken } = useAuth()
+
+// Function to initialize and refresh Firebase token
+async function refreshToken() {
+  try {
+    const token = await getIdToken(true)
+    if (token) {
+      console.log('Firebase token refreshed on app initialization')
+      localStorage.setItem('token', token)
+    }
+  } catch (error) {
+    console.error('Failed to refresh token on app initialization:', error)
+  }
+}
+
+onMounted(() => {
+  // Refresh token on app mount if user is logged in
+  refreshToken()
+})
 </script>
 
 <template>
-  <nav>
-    <RouterLink to="/">Home</RouterLink>
-    <RouterLink to="/signin">Signin</RouterLink>
-  </nav>
   <RouterView />
 </template>
 
 <style scoped>
-nav {
-  width: 100%;
-  font-size: 16px;
-  text-align: center;
-  margin: 2rem 0;
-}
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-nav a:first-of-type {
-  border: 0;
-}
 </style>
